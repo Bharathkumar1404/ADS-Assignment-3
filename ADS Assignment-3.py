@@ -203,3 +203,54 @@ def logistic(t, n0, g, t0):
 
     return f
 
+
+def forecast_labour_force(data, country, start_year, end_year):
+    '''
+    forecast_labour_force will analyse data and optimize to forecast labour 
+    force of selected country
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data for which forecasting analysis is performed.
+    country : STR
+        Country for which forecasting is performed.
+    start_year : INT
+        Starting year for forecasting.
+    end_year : INT
+        Ending year for forecasting.
+
+    Returns
+    -------
+    None.
+
+    '''
+    data = data.loc[:, country]
+    data = data.dropna(axis=0)
+
+    data_labor_force = pd.DataFrame()
+
+    data_labor_force['Year'] = pd.DataFrame(data.index)
+    data_labor_force['Labor'] = pd.DataFrame(data.values)
+    data_labor_force["Year"] = pd.to_numeric(data_labor_force["Year"])
+    importlib.reload(opt)
+
+    param, covar = opt.curve_fit(logistic, data_labor_force["Year"], 
+                   data_labor_force["Labor"],p0=(1.2e12, 0.03, 1990.0))
+
+    sigma = np.sqrt(np.diag(covar))
+
+    year = np.arange(start_year, end_year)
+    forecast = logistic(year, *param)
+    low, up = err.err_ranges(year, logistic, param, sigma)
+    plt.figure()
+    plt.plot(data_labor_force["Year"], data_labor_force["Labor"], label="L_force")
+    plt.plot(year, forecast, label="forecast", color='k')
+    plt.fill_between(year, low, forecast, color="pink", alpha=0.7)
+    plt.fill_between(year, forecast, up, color="pink", alpha=0.7)
+    plt.xlabel("year")
+    plt.ylabel("labor force")
+    plt.legend(loc='upper left')
+    plt.title(f'labor force forecast for {country}')
+    plt.savefig(f'{country}.png', bbox_inches='tight', dpi=300)
+    plt.show()
