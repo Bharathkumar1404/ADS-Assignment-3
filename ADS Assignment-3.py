@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri May 12 02:47:21 2023
-
-@author: SSD
-"""
-
 
 #Importing necessary libraries
 import pandas as pd
@@ -20,11 +14,11 @@ import importlib
 
 def read_data(file):
     '''
-    read_data willread the data create dataframe from the given file
+    read_data it will reads the data and create dataframe from the given file.
 
     Parameters
     ----------
-    file : STR
+    filepath : STR
         File or location.
 
     Returns
@@ -35,14 +29,14 @@ def read_data(file):
     '''
     data = pd.read_csv(file, skiprows=4)
     data = data.set_index('Country Name', drop=True)
-    data = data.loc[:, '1990':'2021']
+    data = data.loc[:, '1970':'2008']
 
     return data
 
 
 def transpose_data(data):
     '''
-    transpose_data it will create transpose of given dataframe.
+    transpose_data it will create transpose of given dataframe
 
     Parameters
     ----------
@@ -59,10 +53,11 @@ def transpose_data(data):
 
     return data_tr
 
+
 def correlation_and_scattermatrix(data):
     '''
     correlation_and_scattermatrix plots correlation matrix and scatter plots
-    of the data.
+    of coloumns in the given data.
 
     Parameters
     ----------
@@ -76,25 +71,25 @@ def correlation_and_scattermatrix(data):
     '''
     corr = data.corr()
     print(corr)
-    plt.figure(figsize=(8,8))
+    plt.figure(figsize=(10,10))
     plt.matshow(corr, cmap='gist_rainbow')
 
     # xticks and yticks for corr matrix
     plt.xticks(range(len(corr.columns)), corr.columns, rotation=90)
     plt.yticks(range(len(corr.columns)), corr.columns,rotation=0)
-    plt.title('Correlation heat map of labour force')
+    plt.title('Correlation over Agriculture methane emission')
     plt.colorbar()
     plt.show()
 
-    pd.plotting.scatter_matrix(data, figsize=(10,10), s=5, alpha=1)
+    pd.plotting.scatter_matrix(data, figsize=(12,12), s=5, alpha=1)
     plt.show()
 
     return
 
 
-def cluster_number(data, data_normalised):
+def cluster_num(data, data_normalised):
     '''
-    cluster_number calculates the best number of clusters based on silhouette
+    cluster_number evalutes the best number of clusters based on silhouette
     score
 
     Parameters
@@ -114,7 +109,7 @@ def cluster_number(data, data_normalised):
     clusters = []
     scores = []
     # loop over number of clusters
-    for ncluster in range(2, 12):
+    for ncluster in range(2, 15):
 
         # Setting up clusters over number of clusters
         kmeans = cluster.KMeans(n_clusters=ncluster)
@@ -141,7 +136,8 @@ def cluster_number(data, data_normalised):
 
 def clusters_and_centers(data, ncluster, y1, y2):
     '''
-    clusters_and_centers will plot clusters and its centers for given data
+    clusters_and_centers will show the plot of clusters and its centers 
+    for given data
 
     Parameters
     ----------
@@ -180,13 +176,14 @@ def clusters_and_centers(data, ncluster, y1, y2):
     # cluster by cluster
     plt.figure(figsize=(8.0, 8.0))
 
-    df1 = plt.cm.get_cmap('tab10')
-    df2 = plt.scatter(data[y1], data[y2], 10, labels, marker="o", cmap=df1)
+    cm = plt.cm.get_cmap('tab10')
+    sc = plt.scatter(data[y1], data[y2], 10, labels, marker="o", cmap=cm)
     plt.scatter(xcen, ycen, 45, "k", marker="s")
-    plt.xlabel(f"labor force({y1})")
-    plt.ylabel(f"labor force({y2})")
-    plt.legend(*df2.legend_elements(), title='clusters')
-    plt.title('Clusters of labor force in 1970 and 2020')
+
+    plt.xlabel(f"Methane emission({y1})")
+    plt.ylabel(f"Methane emission({y2})")
+    plt.legend(*sc.legend_elements(), title='clusters')
+    plt.title('Clusters of Countries over Agriculture methane 1970 and 2008')
     plt.show()
 
     print()
@@ -195,7 +192,7 @@ def clusters_and_centers(data, ncluster, y1, y2):
     return data, cen
 
 
-def logistic(t, n0, g, t0):
+def logistic_value(t, n0, g, t0):
     """Calculates the logistic function with scale factor n0 
     and growth rate g"""
 
@@ -204,10 +201,10 @@ def logistic(t, n0, g, t0):
     return f
 
 
-def forecast_labour_force(data, country, start_year, end_year):
+def forecast(data, country, start_year, end_year):
     '''
-    forecast_labour_force will analyse data and optimize to forecast labour 
-    force of selected country
+    forecast will analyse data and optimize to forecast emission of selected 
+    country
 
     Parameters
     ----------
@@ -228,29 +225,85 @@ def forecast_labour_force(data, country, start_year, end_year):
     data = data.loc[:, country]
     data = data.dropna(axis=0)
 
-    data_labor_force = pd.DataFrame()
+    data_emission = pd.DataFrame()
 
-    data_labor_force['Year'] = pd.DataFrame(data.index)
-    data_labor_force['Labor'] = pd.DataFrame(data.values)
-    data_labor_force["Year"] = pd.to_numeric(data_labor_force["Year"])
+    data_emission['Year'] = pd.DataFrame(data.index)
+    data_emission['METHANE'] = pd.DataFrame(data.values)
+    data_emission["Year"] = pd.to_numeric(data_emission["Year"])
     importlib.reload(opt)
 
-    param, covar = opt.curve_fit(logistic, data_labor_force["Year"], 
-                   data_labor_force["Labor"],p0=(1.2e12, 0.03, 1990.0))
+    param, covar = opt.curve_fit(logistic_value, data_emission["Year"], 
+                   data_emission["METHANE"],p0=(1.2e12, 0.03, 1970.0)
+                   ,maxfev=10000)
 
     sigma = np.sqrt(np.diag(covar))
 
     year = np.arange(start_year, end_year)
-    forecast = logistic(year, *param)
-    low, up = err.err_ranges(year, logistic, param, sigma)
+    forecast_emission = logistic_value(year, *param)
+    low, up = err.err_ranges(year, logistic_value, param, sigma)
     plt.figure()
-    plt.plot(data_labor_force["Year"], data_labor_force["Labor"], label="L_force")
-    plt.plot(year, forecast, label="forecast", color='k')
-    plt.fill_between(year, low, forecast, color="pink", alpha=0.7)
-    plt.fill_between(year, forecast, up, color="pink", alpha=0.7)
+    plt.plot(data_emission["Year"], data_emission["METHANE"], label="METHANE")
+    plt.plot(year, forecast_emission, label="forecast", color='k')
+    plt.fill_between(year, low, forecast_emission, color="pink", alpha=0.7)
+    plt.fill_between(year, forecast_emission, up, color="pink", alpha=0.7)
     plt.xlabel("year")
-    plt.ylabel("labor force")
-    plt.legend(loc='upper left')
-    plt.title(f'labor force forecast for {country}')
+    plt.ylabel("Methane emission (kilo metric tons)")
+    plt.legend(loc='upper right')
+    plt.title(f'Methane forecast_emission for {country}')
     plt.savefig(f'{country}.png', bbox_inches='tight', dpi=300)
     plt.show()
+
+    emission2030 = logistic_value(2030, *param)/10000
+
+    low, up = err.err_ranges(2030, logistic_value, param, sigma)
+    sig = np.abs(up-low)/(2.0 * 10000)
+    print()
+    print("Emission 2030", emission2030*10000, "+/-", sig*10000)
+
+
+#Reading GDP per capita Data
+methane_emission = read_data("Agricultural methane emissions.csv")
+print(methane_emission.describe())
+
+#Finding transpose of GDP per capita Data
+methane_emission_tr = transpose_data(methane_emission)
+print(methane_emission_tr.head())
+
+#Selecting years for which correlation is done for further analysis
+methane_emission_years = methane_emission[[ "1970","1975","1980","1985","1990"
+                                           ,"2000", "2008"]]
+print(methane_emission_years.describe())
+
+correlation_and_scattermatrix(methane_emission_years)
+year1 = "1970"
+year2 = "2008"
+
+# Extracting columns for clustering
+emission_clustering = methane_emission_years[[year1, year2]]
+emission_clustering = emission_clustering.dropna()
+
+# Normalising data and storing minimum and maximum
+df_norm, df_min, df_max = ct.scaler(emission_clustering)
+
+print()
+print("Number of Clusters and Scores")
+ncluster = cluster_num(emission_clustering, df_norm)
+
+df_norm, cen = clusters_and_centers(df_norm, ncluster, year1, year2)
+
+#Applying backscaling to get actual cluster centers
+scen = ct.backscale(cen, df_min, df_max)
+print('scen\n', scen) 
+
+emission_clustering, scen = clusters_and_centers(emission_clustering, 
+                            ncluster, year1, year2)
+
+'''
+We can see some difference in actual cluster centers and 
+backscaled cluster centers.
+'''
+
+print()
+print('Countries in last cluster')
+print(emission_clustering[emission_clustering['labels'] == ncluster-1].
+      index.values)
