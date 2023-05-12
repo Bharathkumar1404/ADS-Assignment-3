@@ -109,7 +109,7 @@ def cluster_num(data, data_normalised):
     clusters = []
     scores = []
     # loop over number of clusters
-    for ncluster in range(2, 15):
+    for ncluster in range(2, 10):
 
         # Setting up clusters over number of clusters
         kmeans = cluster.KMeans(n_clusters=ncluster)
