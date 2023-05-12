@@ -307,3 +307,14 @@ print()
 print('Countries in last cluster')
 print(emission_clustering[emission_clustering['labels'] == ncluster-1].
       index.values)
+
+#Forecast GDP per capita for India
+forecast(methane_emission_tr, 'Cuba', 1970, 2031)
+
+#Forecast GDP per capita for United States
+forecast(methane_emission_tr, 'Bahrain', 1970, 2031)
+
+#Forecast GDP per capita for Pakistan
+forecast(methane_emission_tr, 'Colombia', 1970, 2031)
+
+
